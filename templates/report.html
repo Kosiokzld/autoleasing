@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+{% block content %}
+<h4 class="mb-3"><i class="bi bi-table text-primary"></i> Справка по договори</h4>
+
+<div class="card mb-3">
+    <div class="card-body">
+        <form method="GET" id="reportForm">
+            <div class="row g-2 align-items-end mb-3">
+                <div class="col-auto">
+                    <label class="form-label">Към дата</label>
+                    <input type="date" class="form-control" name="date" id="reportDate" value="{{ date_iso }}" style="width:180px">
+                </div>
+                <div class="col-auto">
+                    <button class="btn btn-primary" type="submit"><i class="bi bi-arrow-clockwise"></i> Генерирай справка</button>
+                </div>
+                <div class="col-auto">
+                    <button type="button" class="btn btn-success" onclick="exportExcel()"><i class="bi bi-file-earmark-excel"></i> Експорт Excel</button>
+                </div>
+            </div>
+            {% if all_contracts %}
+            <div class="border rounded p-2" style="background:#f8f9fa">
+                <label class="form-label mb-1" style="font-size:.85rem"><strong>Избор на договори:</strong></label>
+                <div class="d-flex flex-wrap gap-3">
+                    {% for c in all_contracts %}
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" name="sel" value="{{ c.contract_id }}" id="chk_{{ c.contract_id }}"
+                            {% if not selected_contracts or c.contract_id in selected_contracts %}checked{% endif %}>
+                        <label class="form-check-label" for="chk_{{ c.contract_id }}" style="font-size:.85rem">
+                            {{ c.contract_id }} — {{ c.client_name or '' }} ({{ c.reg_number or '' }})
+                        </label>
+                    </div>
+                    {% endfor %}
+                    <div class="ms-2">
+                        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="toggleAll(true)">Всички</button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="toggleAll(false)">Нито един</button>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </form>
+    </div>
+</div>
+
+<div class="card">
+    <div class="table-responsive">
+        {% if report %}
+        <table class="table table-hover">
+            <thead>
+                <tr>
+                    <th>Договор</th><th>Рег. №</th><th>Марка/Модел</th><th>Наемател</th>
+                    <th class="text-end">Обща стойност</th>
+                    <th class="text-end">Вноски дълж.</th><th class="text-end">Вноски плат.</th>
+                    <th class="text-end">Разходи дълж.</th><th class="text-end">Разходи плат.</th>
+                    <th class="text-end">Общо платено</th><th class="text-end">Остатък</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for r in report %}
+                <tr>
+                    <td><strong>{{ r.contract_id }}</strong></td>
+                    <td>{{ r.reg_number }}</td>
+                    <td>{{ r.brand_model }}</td>
+                    <td>{{ r.client_name }}</td>
+                    <td class="text-end">{{ r.total_amount }} лв.</td>
+                    <td class="text-end">{{ r.inst_due }} лв.</td>
+                    <td class="text-end">{{ r.inst_paid }} лв.</td>
+                    <td class="text-end">{{ r.exp_due }} лв.</td>
+                    <td class="text-end">{{ r.exp_paid }} лв.</td>
+                    <td class="text-end">{{ r.total_paid }} лв.</td>
+                    <td class="text-end"><strong>{{ r.remaining }} лв.</strong></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+            <tfoot>
+                <tr class="table-dark">
+                    <td colspan="5"><strong>ОБЩО</strong></td>
+                    <td class="text-end"><strong>{{ totals.inst_due }} лв.</strong></td>
+                    <td class="text-end"><strong>{{ totals.inst_paid }} лв.</strong></td>
+                    <td class="text-end"><strong>{{ totals.exp_due }} лв.</strong></td>
+                    <td class="text-end"><strong>{{ totals.exp_paid }} лв.</strong></td>
+                    <td class="text-end"><strong>{{ totals.total_paid }} лв.</strong></td>
+                    <td class="text-end"><strong>{{ totals.remaining }} лв.</strong></td>
+                </tr>
+            </tfoot>
+        </table>
+        {% else %}
+        <div class="empty-state">
+            <i class="bi bi-folder-x"></i>
+            Няма договори за показване. Изберете поне един договор и натиснете "Генерирай справка".
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function toggleAll(state) {
+    document.querySelectorAll('input[name="sel"]').forEach(cb => cb.checked = state);
+}
+
+function exportExcel() {
+    // Събираме датата и избраните договори
+    var dateVal = document.getElementById('reportDate').value;
+    var params = 'date=' + encodeURIComponent(dateVal);
+    document.querySelectorAll('input[name="sel"]:checked').forEach(function(cb) {
+        params += '&sel=' + encodeURIComponent(cb.value);
+    });
+    window.location.href = '/report/export?' + params;
+}
+</script>
+{% endblock %}

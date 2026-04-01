@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="d-flex align-items-center mb-3">
+    <a href="{{ url_for('contracts') }}" class="btn btn-outline-secondary btn-sm me-3"><i class="bi bi-arrow-left"></i> Назад</a>
+    <h4 class="mb-0">{% if edit %}<i class="bi bi-pencil text-primary"></i> Редактиране на договор {{ data.contract_id }}{% else %}<i class="bi bi-plus-circle text-primary"></i> Нов договор{% endif %}</h4>
+</div>
+
+<form method="POST">
+    <div class="row">
+        <div class="col-lg-6">
+            <div class="card mb-3">
+                <div class="card-header">Данни за договор и автомобил</div>
+                <div class="card-body">
+                    {% if not edit %}
+                    <div class="mb-3">
+                        <label class="form-label">Номер на договор <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" name="contract_id" value="{{ data.get('contract_id', '') }}" placeholder="напр. 2025-001" required>
+                    </div>
+                    {% endif %}
+                    <div class="mb-3">
+                        <label class="form-label">Рег. номер</label>
+                        <input type="text" class="form-control" name="reg_number" value="{{ data.get('reg_number', '') }}" placeholder="напр. СВ 1234 АБ">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Марка/Модел</label>
+                        <input type="text" class="form-control" name="brand_model" value="{{ data.get('brand_model', '') }}" placeholder="напр. Mercedes-Benz C220">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Наемател</label>
+                        <input type="text" class="form-control" name="client_name" value="{{ data.get('client_name', '') }}">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">ЕГН/ЕИК</label>
+                        <input type="text" class="form-control" name="client_egn" value="{{ data.get('client_egn', '') }}">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Телефон</label>
+                        <input type="text" class="form-control" name="phone" value="{{ data.get('phone', '') }}">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Адрес</label>
+                        <input type="text" class="form-control" name="address" value="{{ data.get('address', '') }}">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Имейл</label>
+                        <input type="email" class="form-control" name="email" value="{{ data.get('email', '') }}">
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="card mb-3">
+                <div class="card-header">Финансови параметри</div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label">Дата на договор <span class="text-danger">*</span></label>
+                        <input type="date" class="form-control" name="contract_date" value="{{ data.get('contract_date', '') }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Обща стойност (лв.)</label>
+                        <input type="text" class="form-control" name="total_amount" value="{{ data.get('total_amount', '') }}">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Първоначална вноска (лв.)</label>
+                        <input type="text" class="form-control" name="initial_payment" value="{{ data.get('initial_payment', '') }}">
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Брой вноски</label>
+                            <input type="number" class="form-control" name="num_installments" value="{{ data.get('num_installments', '12') }}" min="1">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Ден на падеж</label>
+                            <input type="number" class="form-control" name="payment_day" value="{{ data.get('payment_day', '1') }}" min="1" max="31">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Дни отсрочка</label>
+                            <input type="number" class="form-control" name="grace_days" value="{{ data.get('grace_days', '0') }}" min="0">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Месечна вноска (лв.)</label>
+                        <input type="text" class="form-control" name="monthly_payment" value="{{ data.get('monthly_payment', '') }}">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Статус</label>
+                        <select class="form-select" name="status">
+                            <option value="Активен" {% if data.get('status','Активен')=='Активен' %}selected{% endif %}>Активен</option>
+                            <option value="Приключен" {% if data.get('status')=='Приключен' %}selected{% endif %}>Приключен</option>
+                            <option value="Прекратен" {% if data.get('status')=='Прекратен' %}selected{% endif %}>Прекратен</option>
+                        </select>
+                    </div>
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" name="generate_plan" value="1" checked id="genPlan">
+                        <label class="form-check-label" for="genPlan">Автоматично генериране на погасителен план</label>
+                    </div>
+                </div>
+            </div>
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-primary flex-fill"><i class="bi bi-check-lg"></i> Запази</button>
+                <a href="{{ url_for('contracts') }}" class="btn btn-outline-secondary flex-fill">Откажи</a>
+            </div>
+        </div>
+    </div>
+</form>
+{% endblock %}

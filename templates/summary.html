@@ -1,0 +1,198 @@
+{% extends "base.html" %}
+{% block content %}
+<h4 class="mb-3"><i class="bi bi-clipboard-data text-primary"></i> Обобщена справка</h4>
+
+<div class="card mb-3">
+    <div class="card-body">
+        <form method="GET" class="row g-2 align-items-end">
+            <div class="col-auto">
+                <label class="form-label">Договор</label>
+                <select class="form-select" name="contract_id" onchange="this.form.submit()">
+                    <option value="">-- Изберете --</option>
+                    {% for c in contracts %}
+                    <option value="{{ c.id }}" {% if c.id == selected %}selected{% endif %}>{{ c.label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-auto">
+                <label class="form-label">Към дата</label>
+                <input type="date" class="form-control" name="as_of_date" value="{{ as_of_date_iso }}" style="width:180px">
+            </div>
+            <div class="col-auto d-flex align-items-end">
+                <button class="btn btn-primary" type="submit"><i class="bi bi-search"></i> Покажи</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% if selected %}
+<!-- Обобщение карти -->
+<div class="row mb-3">
+    <div class="col-md-3">
+        <div class="stat-card" style="background:#1a73e8">
+            <small>Общо дължимо</small>
+            <h3>{{ data.total_due }} лв.</h3>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card" style="background:#28a745">
+            <small>Общо платено</small>
+            <h3>{{ data.total_paid }} лв.</h3>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card" style="background:#dc3545">
+            <small>Остатък</small>
+            <h3>{{ data.total_remaining }} лв.</h3>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card" style="background:#6f42c1">
+            <small>Разходи дължимо</small>
+            <h3>{{ data.total_exp_due }} лв.</h3>
+        </div>
+    </div>
+</div>
+
+<!-- Разбивка на задължението -->
+{% if data.breakdown %}
+<div class="card mb-3">
+    <div class="card-header"><strong>Разбивка на задължението към {{ as_of_date_display }}</strong></div>
+    <div class="card-body">
+        <table class="table table-sm" style="max-width:550px">
+            <tbody>
+                <tr><td>Просрочени вноски (с изтекъл падеж)</td><td class="text-end"><strong>{{ data.breakdown.inst_overdue }} лв.</strong></td></tr>
+                <tr><td>Предстоящи вноски (бъдещ падеж)</td><td class="text-end">{{ data.breakdown.inst_upcoming }} лв.</td></tr>
+                <tr><td>Глоби</td><td class="text-end">{{ data.breakdown.fines }} лв.</td></tr>
+                <tr><td>Застраховки</td><td class="text-end">{{ data.breakdown.insurance }} лв.</td></tr>
+                <tr><td>Неустойки (записани като разход)</td><td class="text-end">{{ data.breakdown.penalties }} лв.</td></tr>
+                <tr><td>Начислени лихви (0,5% дневно върху просрочие)</td><td class="text-end">{{ data.breakdown.accrued_penalty }} лв.</td></tr>
+                <tr><td>Други разходи</td><td class="text-end">{{ data.breakdown.other }} лв.</td></tr>
+                <tr class="table-active"><td><strong>Общо задължение</strong></td><td class="text-end"><strong>{{ data.breakdown.total }} лв.</strong></td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+
+<!-- Табове -->
+<ul class="nav nav-tabs mb-0" role="tablist">
+    <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" href="#tabInst">Погасителен план</a></li>
+    <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tabExp">Разходи</a></li>
+    <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tabPay">История на плащанията</a></li>
+</ul>
+<div class="tab-content">
+    <!-- Погасителен план -->
+    <div class="tab-pane fade show active" id="tabInst">
+        <div class="card" style="border-top-left-radius:0; border-top-right-radius:0;">
+            <div class="table-responsive">
+                {% if data.installments %}
+                <table class="table table-hover">
+                    <thead>
+                        <tr><th>№</th><th>Падеж</th><th class="text-end">Дължимо</th><th class="text-end">Платено</th><th class="text-end">Остатък</th><th class="text-center">Статус</th></tr>
+                    </thead>
+                    <tbody>
+                        {% for i in data.installments %}
+                        <tr>
+                            <td>{{ i.num }}</td><td>{{ i.due_date }}</td>
+                            <td class="text-end">{{ i.amount }} лв.</td>
+                            <td class="text-end">{{ i.paid }} лв.</td>
+                            <td class="text-end">{{ i.remaining }} лв.</td>
+                            <td class="text-center"><span class="badge badge-{{ i.css }}">{{ i.status }}</span></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <div class="empty-state"><i class="bi bi-inbox"></i> Няма вноски.</div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Разходи -->
+    <div class="tab-pane fade" id="tabExp">
+        <div class="card" style="border-top-left-radius:0; border-top-right-radius:0;">
+            <div class="table-responsive">
+                {% if data.expenses %}
+                <table class="table table-hover">
+                    <thead>
+                        <tr><th>Тип</th><th>Описание</th><th>Падеж</th><th class="text-end">Дължимо</th><th class="text-end">Платено</th><th class="text-end">Остатък</th></tr>
+                    </thead>
+                    <tbody>
+                        {% for e in data.expenses %}
+                        <tr>
+                            <td>{{ e.type }}</td><td>{{ e.description }}</td><td>{{ e.due_date }}</td>
+                            <td class="text-end">{{ e.amount }} лв.</td>
+                            <td class="text-end">{{ e.paid }} лв.</td>
+                            <td class="text-end">{{ e.remaining }} лв.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <div class="empty-state"><i class="bi bi-inbox"></i> Няма разходи.</div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Плащания -->
+    <div class="tab-pane fade" id="tabPay">
+        <div class="card" style="border-top-left-radius:0; border-top-right-radius:0;">
+            <div class="table-responsive">
+                {% if data.payments %}
+                <table class="table table-hover">
+                    <thead>
+                        <tr><th>Дата</th><th class="text-end">Сума</th><th class="text-end">Глоби</th>
+                            <th class="text-end">Застр.</th><th class="text-end">Неуст.</th>
+                            <th class="text-end">Други</th><th class="text-end">Проср.</th>
+                            <th class="text-end">Редовни</th><th class="text-end">Неразпр.</th><th>Бележка</th></tr>
+                    </thead>
+                    <tbody>
+                        {% for p in data.payments %}
+                        <tr>
+                            <td>{{ p.date }}</td>
+                            <td class="text-end"><strong>{{ p.amount }} лв.</strong></td>
+                            <td class="text-end">{{ p.for_fines }}</td>
+                            <td class="text-end">{{ p.for_insurance }}</td>
+                            <td class="text-end">{{ p.for_penalties }}</td>
+                            <td class="text-end">{{ p.for_other }}</td>
+                            <td class="text-end">{{ p.for_overdue }}</td>
+                            <td class="text-end">{{ p.for_regular }}</td>
+                            <td class="text-end">{{ p.unallocated }}</td>
+                            <td>{{ p.note }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <div class="empty-state"><i class="bi bi-inbox"></i> Няма плащания.</div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Обобщение текстово -->
+<div class="card mt-3">
+    <div class="card-body" style="font-size:.9rem">
+        <div class="row">
+            <div class="col-md-6">
+                <strong>Вноски:</strong> дължимо {{ data.total_inst_due }} лв. | платено {{ data.total_inst_paid }} лв.
+            </div>
+            <div class="col-md-6">
+                <strong>Разходи:</strong> дължимо {{ data.total_exp_due }} лв. | платено {{ data.total_exp_paid }} лв.
+            </div>
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="card">
+    <div class="empty-state">
+        <i class="bi bi-arrow-up-circle"></i>
+        Изберете договор от списъка горе.
+    </div>
+</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,152 @@
+{% extends "base.html" %}
+{% block content %}
+<h4 class="mb-3"><i class="bi bi-credit-card text-primary"></i> Плащания</h4>
+
+<div class="card mb-3">
+    <div class="card-body">
+        <form method="GET" class="row g-2 align-items-end">
+            <div class="col-auto">
+                <label class="form-label">Договор</label>
+                <select class="form-select" name="contract_id" onchange="this.form.submit()">
+                    <option value="">-- Изберете --</option>
+                    {% for c in contracts %}
+                    <option value="{{ c.id }}" {% if c.id == selected %}selected{% endif %}>{{ c.label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% if selected %}
+<div class="card mb-3">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        Ново плащане — Договор {{ selected }}
+        <button class="btn btn-sm btn-primary" type="button" data-bs-toggle="collapse" data-bs-target="#addPaymentForm"><i class="bi bi-plus-lg"></i> Добави плащане</button>
+    </div>
+    <div class="collapse" id="addPaymentForm">
+        <div class="card-body">
+            <div class="alert alert-light border mb-3" style="font-size:.85rem">
+                <strong>Приоритет на разпределение:</strong>
+                1. Глоби &rarr; 2. Застраховки &rarr; 3. Неустойки &rarr; 4. Други разходи &rarr; 5. Просрочени вноски &rarr; 6. Редовни вноски
+            </div>
+            <form method="POST" action="{{ url_for('payment_add') }}" class="row g-3">
+                <input type="hidden" name="contract_id" value="{{ selected }}">
+                <div class="col-md-3">
+                    <label class="form-label">Дата на плащане</label>
+                    <input type="date" class="form-control" name="payment_date" required>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Сума (лв.)</label>
+                    <input type="text" class="form-control" name="amount" required>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Бележка</label>
+                    <input type="text" class="form-control" name="note">
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <button class="btn btn-primary w-100" type="submit"><i class="bi bi-check-lg"></i> Разпредели</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Погасителен план -->
+{% if installments %}
+<div class="card mb-3">
+    <div class="card-header"><i class="bi bi-list-ol"></i> Погасителен план</div>
+    <div class="table-responsive">
+        <table class="table table-hover">
+            <thead>
+                <tr><th>№</th><th>Падеж</th><th class="text-end">Дължимо</th><th class="text-end">Платено</th><th class="text-end">Остатък</th><th class="text-center">Статус</th></tr>
+            </thead>
+            <tbody>
+                {% for i in installments %}
+                <tr>
+                    <td>{{ i.num }}</td><td>{{ i.due_date }}</td>
+                    <td class="text-end">{{ i.amount }} лв.</td>
+                    <td class="text-end">{{ i.paid }} лв.</td>
+                    <td class="text-end">{{ i.remaining }} лв.</td>
+                    <td class="text-center"><span class="badge badge-{{ i.css }}">{{ i.status }}</span></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+
+<!-- Разбивка на задължението -->
+{% if breakdown %}
+<div class="card mb-3">
+    <div class="card-header"><i class="bi bi-pie-chart"></i> Разбивка на задължението към днес</div>
+    <div class="card-body">
+        <table class="table table-sm" style="max-width:500px">
+            <tbody>
+                <tr><td>Просрочени вноски</td><td class="text-end"><strong>{{ breakdown.inst_overdue }} лв.</strong></td></tr>
+                <tr><td>Предстоящи вноски</td><td class="text-end">{{ breakdown.inst_upcoming }} лв.</td></tr>
+                <tr><td>Глоби</td><td class="text-end">{{ breakdown.fines }} лв.</td></tr>
+                <tr><td>Застраховки</td><td class="text-end">{{ breakdown.insurance }} лв.</td></tr>
+                <tr><td>Неустойки (записани)</td><td class="text-end">{{ breakdown.penalties }} лв.</td></tr>
+                <tr><td>Начислени лихви (0,5% дневно)</td><td class="text-end">{{ breakdown.accrued_penalty }} лв.</td></tr>
+                <tr><td>Други разходи</td><td class="text-end">{{ breakdown.other }} лв.</td></tr>
+                <tr class="table-active"><td><strong>Общо задължение</strong></td><td class="text-end"><strong>{{ breakdown.total }} лв.</strong></td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+
+<!-- История на плащанията -->
+<div class="card">
+    <div class="card-header"><i class="bi bi-clock-history"></i> История на плащанията</div>
+    <div class="table-responsive">
+        {% if payments %}
+        <table class="table table-hover">
+            <thead>
+                <tr><th>ID</th><th>Дата</th><th class="text-end">Сума</th><th class="text-end">Глоби</th>
+                    <th class="text-end">Застр.</th><th class="text-end">Неуст.</th><th class="text-end">Други</th>
+                    <th class="text-end">Проср.</th><th class="text-end">Редовни</th><th class="text-end">Неразпр.</th>
+                    <th>Бележка</th><th></th></tr>
+            </thead>
+            <tbody>
+                {% for p in payments %}
+                <tr>
+                    <td>{{ p.id }}</td><td>{{ p.payment_date }}</td>
+                    <td class="text-end"><strong>{{ p.amount }} лв.</strong></td>
+                    <td class="text-end">{{ p.for_fines }}</td>
+                    <td class="text-end">{{ p.for_insurance }}</td>
+                    <td class="text-end">{{ p.for_penalties }}</td>
+                    <td class="text-end">{{ p.for_other }}</td>
+                    <td class="text-end">{{ p.for_overdue }}</td>
+                    <td class="text-end">{{ p.for_regular }}</td>
+                    <td class="text-end">{{ p.unallocated }}</td>
+                    <td>{{ p.note }}</td>
+                    <td>
+                        <form method="POST" action="{{ url_for('payment_delete', payment_id=p.id) }}" onsubmit="return confirm('Изтриването НЕ възстановява вноските. Продължавате?')">
+                            <input type="hidden" name="contract_id" value="{{ selected }}">
+                            <button class="btn btn-outline-danger btn-sm"><i class="bi bi-trash"></i></button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="empty-state">
+            <i class="bi bi-inbox"></i>
+            Няма плащания за този договор.
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% else %}
+<div class="card">
+    <div class="empty-state">
+        <i class="bi bi-arrow-up-circle"></i>
+        Изберете договор от списъка горе.
+    </div>
+</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+{% block content %}
+<h4 class="mb-3"><i class="bi bi-speedometer2 text-primary"></i> Табло — {{ today }}</h4>
+
+<div class="row mb-3">
+    <div class="col-md-4">
+        <div class="stat-card" style="background:#1a73e8">
+            <small>Активни договори</small>
+            <h3>{{ total_contracts }}</h3>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="stat-card" style="background:#dc3545">
+            <small>Договори с просрочие</small>
+            <h3>{{ overdue_list|length }}</h3>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="stat-card" style="background:#e65100">
+            <small>Общо просрочени суми</small>
+            <h3>{{ total_overdue }} лв.</h3>
+        </div>
+    </div>
+</div>
+
+<!-- Просрочени договори -->
+{% if overdue_list %}
+<div class="card mb-3">
+    <div class="card-header"><strong>Договори с просрочие</strong></div>
+    <div class="table-responsive">
+        <table class="table table-hover">
+            <thead>
+                <tr><th>Договор</th><th>Клиент</th><th>Рег. номер</th><th class="text-end">Просрочена сума</th><th></th></tr>
+            </thead>
+            <tbody>
+                {% for o in overdue_list %}
+                <tr>
+                    <td><strong>{{ o.contract_id }}</strong></td>
+                    <td>{{ o.client_name }}</td>
+                    <td>{{ o.reg_number }}</td>
+                    <td class="text-end"><strong>{{ o.amount }} лв.</strong></td>
+                    <td><a href="{{ url_for('summary', contract_id=o.contract_id) }}" class="btn btn-sm btn-outline-primary">Детайли</a></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% else %}
+<div class="card mb-3">
+    <div class="card-body text-center" style="color:#28a745">
+        <i class="bi bi-check-circle" style="font-size:2rem"></i>
+        <p class="mt-2 mb-0">Няма просрочени договори.</p>
+    </div>
+</div>
+{% endif %}
+
+<!-- Предстоящи падежи -->
+{% if upcoming_list %}
+<div class="card mb-3">
+    <div class="card-header"><strong>Предстоящи падежи (следващите 7 дни)</strong></div>
+    <div class="table-responsive">
+        <table class="table table-hover">
+            <thead>
+                <tr><th>Договор</th><th>Клиент</th><th>Рег. номер</th><th>Падеж</th><th class="text-end">Сума</th><th></th></tr>
+            </thead>
+            <tbody>
+                {% for u in upcoming_list %}
+                <tr>
+                    <td><strong>{{ u.contract_id }}</strong></td>
+                    <td>{{ u.client_name }}</td>
+                    <td>{{ u.reg_number }}</td>
+                    <td>{{ u.due_date }}</td>
+                    <td class="text-end">{{ u.remaining }} лв.</td>
+                    <td><a href="{{ url_for('payments', contract_id=u.contract_id) }}" class="btn btn-sm btn-outline-primary">Плащане</a></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% else %}
+<div class="card mb-3">
+    <div class="card-body text-center" style="color:#6c757d">
+        <i class="bi bi-calendar-check" style="font-size:2rem"></i>
+        <p class="mt-2 mb-0">Няма падежи в следващите 7 дни.</p>
+    </div>
+</div>
+{% endif %}
+
+<div class="text-center mt-3">
+    <a href="{{ url_for('contracts') }}" class="btn btn-primary"><i class="bi bi-list-ul"></i> Всички договори</a>
+</div>
+{% endblock %}

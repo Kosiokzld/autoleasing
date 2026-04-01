@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-6">
+        <h4 class="mb-3"><i class="bi bi-gear text-primary"></i> SMTP настройки за имейл</h4>
+        <div class="card">
+            <div class="card-body">
+                <div class="alert alert-info" style="font-size:.85rem">
+                    <strong>Забележка:</strong> Тази настройка е необходима само ако искате да изпращате напомнителни писма по имейл. За Gmail използвайте App Password.
+                </div>
+                <form method="POST">
+                    <div class="mb-3">
+                        <label class="form-label">SMTP сървър</label>
+                        <input type="text" class="form-control" name="smtp_server" value="{{ smtp.smtp_server if smtp else 'smtp.gmail.com' }}">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Порт</label>
+                        <input type="number" class="form-control" name="smtp_port" value="{{ smtp.smtp_port if smtp else '587' }}">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Потребителско име (имейл)</label>
+                        <input type="text" class="form-control" name="smtp_user" value="{{ smtp.smtp_user if smtp else '' }}">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Парола / App Password</label>
+                        <input type="password" class="form-control" name="smtp_password" value="{{ smtp.smtp_password if smtp else '' }}">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Изпращач (име)</label>
+                        <input type="text" class="form-control" name="sender_name" value="{{ smtp.sender_name if smtp else '' }}">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Имейл на изпращач</label>
+                        <input type="email" class="form-control" name="sender_email" value="{{ smtp.sender_email if smtp else '' }}">
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100"><i class="bi bi-check-lg"></i> Запази настройките</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

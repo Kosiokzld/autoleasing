@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+{% block content %}
+<h4 class="mb-3"><i class="bi bi-exclamation-triangle text-primary"></i> Неустойки</h4>
+
+<div class="card mb-3">
+    <div class="card-body">
+        <form method="GET" class="row g-2 align-items-end">
+            <div class="col-auto">
+                <label class="form-label">Договор</label>
+                <select class="form-select" name="contract_id">
+                    <option value="">-- Изберете --</option>
+                    {% for c in contracts %}
+                    <option value="{{ c.id }}" {% if c.id == selected %}selected{% endif %}>{{ c.label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-auto">
+                <label class="form-label">Към дата</label>
+                <input type="date" class="form-control" name="calc_date" value="{{ calc_date_iso }}">
+            </div>
+            <div class="col-auto">
+                <button class="btn btn-primary" type="submit"><i class="bi bi-calculator"></i> Изчисли неустойки</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% if selected and penalties %}
+<div class="row mb-3">
+    <div class="col-md-4">
+        <div class="stat-card bg-danger">
+            <small>Общо неустойки към {{ calc_date }}</small>
+            <h3>{{ total_penalty }} лв.</h3>
+        </div>
+    </div>
+</div>
+
+<div class="card mb-3">
+    <div class="card-header">Просрочени задължения</div>
+    <div class="table-responsive">
+        <table class="table table-hover">
+            <thead>
+                <tr>
+                    <th>Описание</th><th>Падеж</th><th class="text-end">Главница</th>
+                    <th class="text-center">Дни просрочие</th><th class="text-center">Лихва %</th>
+                    <th class="text-end">Неустойка</th><th class="text-end">Платено</th>
+                    <th class="text-end">Общо дължимо</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in penalties %}
+                <tr class="{% if p.type == 'installment' %}table-danger{% else %}table-warning{% endif %}">
+                    <td>{{ p.description }}</td>
+                    <td>{{ p.due_date }}</td>
+                    <td class="text-end">{{ p.principal }} лв.</td>
+                    <td class="text-center"><strong>{{ p.overdue_days }}</strong></td>
+                    <td class="text-center">{{ p.penalty_rate }}</td>
+                    <td class="text-end"><strong>{{ p.penalty }} лв.</strong></td>
+                    <td class="text-end">{{ p.paid }} лв.</td>
+                    <td class="text-end"><strong>{{ p.total_owed }} лв.</strong></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Напомнително писмо -->
+<div class="card mb-3">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-envelope"></i> Напомнително писмо</span>
+        <div>
+            <button class="btn btn-sm btn-outline-primary" onclick="copyReminder()"><i class="bi bi-clipboard"></i> Копирай текста</button>
+            <form method="POST" action="{{ url_for('penalty_send_email') }}" style="display:inline">
+                <input type="hidden" name="contract_id" value="{{ selected }}">
+                <input type="hidden" name="reminder_text" value="{{ reminder_text }}">
+                <button class="btn btn-sm btn-warning" type="submit" onclick="return confirm('Изпращане на имейл?')"><i class="bi bi-send"></i> Изпрати имейл</button>
+            </form>
+        </div>
+    </div>
+    <div class="card-body">
+        <textarea id="reminderText" class="form-control" rows="14" style="font-family: monospace; font-size: .85rem;" readonly>{{ reminder_text }}</textarea>
+    </div>
+</div>
+{% elif selected %}
+<div class="card">
+    <div class="empty-state">
+        <i class="bi bi-check-circle text-success" style="font-size:3rem"></i>
+        Няма просрочени задължения към {{ calc_date }}.
+    </div>
+</div>
+{% else %}
+<div class="card">
+    <div class="empty-state">
+        <i class="bi bi-arrow-up-circle"></i>
+        Изберете договор и дата, след което натиснете "Изчисли неустойки".
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+function copyReminder() {
+    const ta = document.getElementById('reminderText');
+    ta.select();
+    navigator.clipboard.writeText(ta.value).then(() => {
+        alert('Текстът е копиран.');
+    });
+}
+</script>
+{% endblock %}
